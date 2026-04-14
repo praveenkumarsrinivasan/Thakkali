@@ -32,22 +32,23 @@ See [timer ↔ task integration](../tasks/timer-integration.md) for details.
 
 Once the timer is running:
 
-| Key                        | Action                                       |
-|----------------------------|----------------------------------------------|
-| ++space++                  | Pause / resume                               |
-| ++plus++                   | Add 5 minutes                                |
-| ++minus++                  | Subtract 5 minutes (floor 1 minute)          |
-| ++r++                      | Reset the current block                      |
-| ++m++                      | Toggle minimal mode                          |
-| ++h++                      | Toggle the bottom help line                  |
-| ++1++ / ++2++ / ++3++      | Switch to countdown / Pomodoro / stopwatch   |
-| ++q++                      | Quit (writes the session if the block ended) |
+| Key                           | Action                                       |
+|-------------------------------|----------------------------------------------|
+| ++space++                     | Pause / resume                               |
+| ++plus++ / ++equal++          | Add 1 minute to the current block            |
+| ++minus++ / ++underscore++    | Subtract 1 minute (floor: 1 minute)          |
+| ++r++                         | Reset the current block                      |
+| ++m++                         | Toggle minimal mode                          |
+| ++h++                         | Toggle the bottom help line                  |
+| ++1++ / ++2++ / ++3++         | Switch to countdown / Pomodoro / stopwatch   |
+| ++q++ / ++ctrl+c++            | Quit (writes the session if the block ended) |
 
 ## When the timer ends
 
 - A native desktop notification fires (via `beeep`).
-- On macOS, `afplay` plays the named system sound (default `Glass`);
-  elsewhere a terminal beep plays.
+- With `-S <name>` on macOS, `afplay` plays the named system sound
+  (`Glass`, `Ping`, `Hero`, …); otherwise — and on Linux / Windows —
+  a cross-platform terminal beep plays.
 - A single line is appended to `~/Library/Application Support/thakkali/log.jsonl`
   (or your platform's equivalent — see
   [file formats](../reference/file-formats.md)).

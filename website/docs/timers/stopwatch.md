@@ -52,7 +52,7 @@ Each logged entry has `"phase": "timer"`:
 thakkali stats                  # both sections: Pomodoro then Timer
 thakkali stats -m timer         # only stopwatch sessions
 thakkali stats -m pomodoro      # only work-phase sessions
-thakkali stats -m timer -d 14   # stopwatch, last 14 days
+thakkali stats -m timer -days 14   # stopwatch, last 14 days
 ```
 
 See the [stats page](../viz/stats.md) for the full output.

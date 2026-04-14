@@ -22,15 +22,17 @@ animation, keybindings, and log format.
 
 ## Shared in-app keybindings
 
-| Key                         | Action                                               |
-|-----------------------------|------------------------------------------------------|
-| ++space++                   | Pause / resume                                       |
-| ++r++                       | Reset current block                                  |
-| ++plus++ / ++minus++        | Add / remove 5 minutes from the current block        |
-| ++1++ / ++2++ / ++3++       | Switch to countdown / Pomodoro / stopwatch live      |
-| ++m++                       | Toggle minimal mode (hides logo + animation)         |
-| ++h++                       | Toggle the footer help line                          |
-| ++q++, ++esc++, ++ctrl+c++  | Quit                                                 |
+| Key                            | Action                                                |
+|--------------------------------|-------------------------------------------------------|
+| ++space++                      | Pause / resume                                        |
+| ++r++                          | Reset the current block                               |
+| ++plus++ / ++equal++           | Add 1 minute (to the work block, or to a stopwatch target)  |
+| ++minus++ / ++underscore++     | Subtract 1 minute (floor: 1 minute)                   |
+| ++s++                          | Skip the current Pomodoro phase (Pomodoro mode only)  |
+| ++1++ / ++2++ / ++3++          | Switch to countdown / Pomodoro / stopwatch live       |
+| ++m++                          | Toggle minimal mode (hides logo + animation)          |
+| ++h++                          | Toggle the footer help line                           |
+| ++q++ / ++ctrl+c++             | Quit (writes the session log if the block ended)      |
 
 See the full list in the [keybindings reference](../reference/keybindings.md).
 

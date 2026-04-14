@@ -29,7 +29,7 @@ thakkali activity [-weeks N]
 | `-rounds`     | `-r`  | 4                | Pomodoro rounds before a long break.           |
 | `-task`       | `-t`  | —                | Session tag. Free text, or `TSK-N` / `THAK-N`. |
 | `-minimal`    | `-m`  | off              | Hide logo and tomato animation.                |
-| `-sound`      | `-S`  | `"Glass"` (mac)  | macOS system sound on completion.              |
+| `-sound`      | `-S`  | `""` (beep)      | macOS system sound on completion (`Glass`, …). |
 | `-version`    | `-v`  | —                | Print version and exit.                        |
 | `-examples`   | `-e`  | —                | Print worked examples and exit.                |
 
@@ -43,7 +43,7 @@ thakkali stats [-days N] [-mode all|pomodoro|timer]
 
 | Flag              | Short | Default | Effect                                           |
 |-------------------|-------|---------|--------------------------------------------------|
-| `-days`           | `-d`  | 7       | Recent-window size.                              |
+| `-days`           | —     | 7       | Recent-window size.                              |
 | `-mode`           | `-m`  | `all`   | Filter: `all`, `pomodoro`, or `timer`.           |
 
 See the [stats page](../viz/stats.md).
@@ -81,7 +81,13 @@ thakkali task list [-state STATE] [-p PROJECT]
 thakkali task move <id> <todo|doing|done>
 ```
 
-Aliases accepted for state: `t`, `d`, `x`, `in-progress`, `wip`.
+Aliases accepted for state (case-insensitive):
+
+| State    | Aliases                        |
+|----------|--------------------------------|
+| `todo`   | `t`                            |
+| `doing`  | `d`, `in-progress`, `wip`      |
+| `done`   | `x`                            |
 
 ### `task done`
 
@@ -153,7 +159,9 @@ See the [activity page](../viz/activity.md).
 
 ```bash
 thakkali -v
-# thakkali dev (none) built unknown
+# thakkali 0.2.0 (c9f4f00) built 2026-04-14T13:49:58Z
+# (released builds stamp version/commit/date via -ldflags; dev builds
+#  print "dev (none) built unknown")
 
 thakkali -e
 # (prints every example from every mode, styled, with keymaps at the bottom)

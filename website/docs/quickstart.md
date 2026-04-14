@@ -12,7 +12,7 @@ thakkali                 # 25-minute countdown, Ghostty-style tomato
 Inside the app:
 
 - ++space++ pauses / resumes
-- ++plus++ / ++minus++ adds or removes 5 minutes
+- ++plus++ / ++minus++ adds or removes 1 minute
 - ++m++ toggles minimal mode (hides the logo and animation)
 - ++q++ quits
 

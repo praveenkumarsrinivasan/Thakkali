@@ -8,14 +8,14 @@ thakkali stats                  # both sections: Pomodoro then Timer
 thakkali stats -days 30         # wider window (default 7)
 thakkali stats -mode pomodoro   # only Pomodoro / countdown sessions
 thakkali stats -m timer         # only stopwatch sessions
-thakkali stats -m timer -d 14   # stopwatch, last 14 days (short flags)
+thakkali stats -m timer -days 14   # stopwatch, last 14 days (short -m)
 ```
 
 ## Flags
 
 | Flag                | Default  | Effect                                                           |
 |---------------------|----------|------------------------------------------------------------------|
-| `-days`, `-d <n>`   | 7        | Size of the recent-window bar chart.                             |
+| `-days <n>`         | 7        | Size of the recent-window bar chart.                             |
 | `-mode`, `-m <m>`   | `all`    | Which sections to render: `all`, `pomodoro`, or `timer`.         |
 
 ## Output structure

@@ -46,17 +46,19 @@ are not tracked — they're ergonomic, not billable.
 
 ## Live interaction
 
-Same keybindings as [countdown mode](countdown.md). Extras worth
-highlighting:
+Same keybindings as [countdown mode](countdown.md), plus:
 
 | Key                     | Action                                                    |
 |-------------------------|-----------------------------------------------------------|
+| ++s++                   | Skip the current phase — jumps straight to the next one.  |
 | ++space++               | Pause / resume the current phase.                         |
 | ++r++                   | Reset the current phase (work or break).                  |
 | ++1++ / ++2++ / ++3++   | Switch mode live (countdown / Pomodoro / stopwatch).      |
 
-Switching out of Pomodoro mid-cycle is safe — the current phase's time
-to that point is logged if it was a work phase.
+`s` is the escape hatch when a break drags on or you want to cut a
+work round short without losing the cycle. Switching out of Pomodoro
+mid-cycle with `1` / `3` is also safe — the current phase's time to
+that point is logged if it was a work phase.
 
 ## Round counter
 

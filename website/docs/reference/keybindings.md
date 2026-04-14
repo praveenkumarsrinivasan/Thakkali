@@ -4,18 +4,25 @@ Every hotkey Thakkali responds to, grouped by mode.
 
 ## Timer (countdown / Pomodoro / stopwatch)
 
-| Key                         | Action                                                       |
-|-----------------------------|--------------------------------------------------------------|
-| ++space++                   | Pause / resume                                               |
-| ++r++                       | Reset the current block                                      |
-| ++plus++                    | Add 5 minutes to the current block                           |
-| ++minus++                   | Subtract 5 minutes (floor: 1 minute)                         |
-| ++1++                       | Switch to countdown mode                                     |
-| ++2++                       | Switch to Pomodoro mode                                      |
-| ++3++                       | Switch to stopwatch mode                                     |
-| ++m++                       | Toggle minimal mode (hides logo + tomato animation)          |
-| ++h++                       | Toggle the help line at the bottom                           |
-| ++q++, ++esc++, ++ctrl+c++  | Quit (writes the session log if the block ended)             |
+| Key                              | Action                                                          |
+|----------------------------------|-----------------------------------------------------------------|
+| ++space++                        | Pause / resume                                                  |
+| ++r++                            | Reset the current block (stopwatch: flushes the session first)  |
+| ++s++                            | Skip to the next Pomodoro phase (Pomodoro mode only; no-op elsewhere) |
+| ++plus++ / ++equal++             | Add 1 minute to the work block (or the stopwatch target)        |
+| ++minus++ / ++underscore++       | Subtract 1 minute (floor: 1 minute)                             |
+| ++1++                            | Switch to countdown mode                                        |
+| ++2++                            | Switch to Pomodoro mode                                         |
+| ++3++                            | Switch to stopwatch mode                                        |
+| ++m++                            | Toggle minimal mode (hides logo + tomato animation)             |
+| ++h++                            | Toggle the help line at the bottom                              |
+| ++q++ / ++ctrl+c++               | Quit (writes the session log if the block ended)                |
+
+!!! note "ESC does *not* quit the timer"
+    ESC is only a quit key in the `todo` and `kanban` TUIs, and for
+    canceling inline inputs. The timer only quits on ++q++ or
+    ++ctrl+c++ — this is deliberate, so you can't accidentally lose a
+    stopwatch session by mashing ESC.
 
 ## `thakkali todo` (list TUI)
 

@@ -22,17 +22,17 @@ Same directory also holds `log.jsonl` and the *global* task file
   "short": 5,
   "long": 15,
   "rounds": 4,
-  "sound": "Glass"
+  "sound": ""
 }
 ```
 
-| Field     | Type   | Default  | Effect                                                           |
-|-----------|--------|----------|------------------------------------------------------------------|
-| `work`    | int    | 25       | Default work / countdown length in minutes.                      |
-| `short`   | int    | 5        | Pomodoro short break in minutes.                                 |
-| `long`    | int    | 15       | Pomodoro long break in minutes.                                  |
-| `rounds`  | int    | 4        | Work rounds before a long break in Pomodoro mode.                |
-| `sound`   | string | `"Glass"`| macOS system sound (`Glass`, `Ping`, `Hero`, …). `""` = beep.    |
+| Field     | Type   | Default | Effect                                                           |
+|-----------|--------|---------|------------------------------------------------------------------|
+| `work`    | int    | 25      | Default work / countdown length in minutes.                      |
+| `short`   | int    | 5       | Pomodoro short break in minutes.                                 |
+| `long`    | int    | 15      | Pomodoro long break in minutes.                                  |
+| `rounds`  | int    | 4       | Work rounds before a long break in Pomodoro mode.                |
+| `sound`   | string | `""`    | macOS system sound (`Glass`, `Ping`, `Hero`, …). `""` = beep.    |
 
 CLI flags override the config on a per-run basis without touching the
 file:
