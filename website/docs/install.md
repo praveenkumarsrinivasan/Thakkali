@@ -6,7 +6,7 @@ is most comfortable for you.
 ## Homebrew (macOS, Linuxbrew)
 
 ```bash
-brew install praveenkumarsrinivasan/tap/thakkali
+brew install praveenkumarsrinivasan/thakkali/thakkali
 ```
 
 That's it — `thakkali` is now on your `$PATH`.

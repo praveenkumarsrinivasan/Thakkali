@@ -61,7 +61,7 @@ brews:
       name: goreleaserbot
       email: bot@goreleaser.com
     homepage: https://github.com/praveenkumarsrinivasan/Thakkali
-    description: "Terminal Pomodoro timer with a Ghostty-inspired rolling-tomato ASCII animation."
+    description: "Terminal Pomodoro timer + lightweight task tracker with a Ghostty-inspired rolling-tomato animation."
     license: MIT
     install: |
       bin.install "thakkali"
