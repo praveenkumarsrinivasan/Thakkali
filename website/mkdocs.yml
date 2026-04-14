@@ -1,0 +1,107 @@
+site_name: Thakkali
+site_description: Terminal Pomodoro timer + task tracker with a rolling-tomato animation.
+site_url: https://praveenkumarsrinivasan.github.io/Thakkali/
+site_author: Praveen Kumar Srinivasan
+repo_url: https://github.com/praveenkumarsrinivasan/Thakkali
+repo_name: praveenkumarsrinivasan/Thakkali
+edit_uri: edit/main/website/docs/
+copyright: © Praveen Kumar Srinivasan
+
+theme:
+  name: material
+  language: en
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: red
+      accent: red
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: red
+      accent: red
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - search.suggest
+    - search.highlight
+  icon:
+    repo: fontawesome/brands/github
+    logo: material/food-apple
+  font:
+    text: Inter
+    code: JetBrains Mono
+
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      permalink_title: Anchor link
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/praveenkumarsrinivasan/Thakkali
+
+nav:
+  - Home: index.md
+  - Install: install.md
+  - Quickstart: quickstart.md
+  - Timers:
+      - timers/index.md
+      - Countdown: timers/countdown.md
+      - Pomodoro: timers/pomodoro.md
+      - Stopwatch: timers/stopwatch.md
+  - Tasks:
+      - tasks/index.md
+      - CLI (add, list, move, ...): tasks/cli.md
+      - todo TUI: tasks/todo-tui.md
+      - Kanban board: tasks/kanban.md
+      - Bulk edit in $EDITOR: tasks/bulk-edit.md
+      - Timer ↔ task integration: tasks/timer-integration.md
+  - Visualization:
+      - viz/index.md
+      - Stats: viz/stats.md
+      - Gantt: viz/gantt.md
+      - Activity heatmap: viz/activity.md
+  - Reference:
+      - reference/index.md
+      - Keybindings: reference/keybindings.md
+      - Config: reference/config.md
+      - File formats: reference/file-formats.md
+      - CLI reference: reference/cli.md
+  - FAQ: faq.md

@@ -1,0 +1,33 @@
+/* Thakkali accent palette — tomato-red, matching the terminal app. */
+
+:root {
+  --md-primary-fg-color: #E53935;
+  --md-primary-fg-color--light: #FF5252;
+  --md-primary-fg-color--dark: #7F1212;
+  --md-accent-fg-color: #FF5252;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #FF5252;
+  --md-accent-fg-color: #FF8A80;
+}
+
+/* Monospace blocks showing TUI output: slightly tighter line-height so the
+   ASCII art lines up tightly and the boxes don't get stretched. */
+pre code {
+  line-height: 1.35;
+}
+
+/* Keybinding chips rendered by pymdownx.keys — make them a little bolder. */
+kbd.key, .keys kbd {
+  background: var(--md-code-bg-color);
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 4px;
+  padding: 0 5px;
+  font-weight: 600;
+}
+
+/* Make the sidebar "section" headings a touch more prominent. */
+.md-nav--primary .md-nav__title {
+  font-weight: 700;
+}
