@@ -62,6 +62,25 @@ Phases 1–6 shipped and on `main`:
 
 Post-phase polish also landed: ANSI Shadow digit font for the timer, solo/pomodoro flip (simple timer is default), minimal mode (hide logo + animation), duration hotkeys (`+` / `-`), short flag aliases, and a count-up stopwatch mode (`-timer` / `-T`) with optional soft target (`-target`) and a split `stats -mode` view (pomodoro | timer | all).
 
+Phase 8 (all sub-phases A1–D + v2 storage) also shipped — `thakkali task` CLI,
+`thakkali todo` TUI, `thakkali kanban` three-column board, timer ↔
+task integration, `thakkali gantt -view week|month|year`, `thakkali
+activity` (52-week contribution heatmap from `log.jsonl`), and a
+tracked-tasks rollup inside `stats`. Task file is plain markdown
+(`./thakkali.md` project-local, fallback to global) with Obsidian-style
+`#project` tags and `@key:value` dates. State transitions auto-stamp
+`@begin` / `@done` and clear them on backwards moves so stamps always
+reflect current state (uniform across CLI, TUI, kanban, and `$EDITOR`
+bulk edit). `-task TSK-N` resolves to a tracked task, auto-promotes
+`todo → doing` on first tagged session, and records `TaskID` + `Project`
+in the log. `stats` rolls up per task, per project, and shows a joined
+tracked-tasks table with overdue badges. Plan in
+`docs/phase-8-tasks.md`. v2 storage derives the ID prefix from the
+containing directory for project-local files (e.g. `THAK-1` in the
+Thakkali repo) and keeps `TSK-1` for the global file; parser accepts
+any `[A-Z]+-N` and stores per-task prefix for round-trip safety.
+Phase 8 complete.
+
 Pending:
 
 7. Distribution — GoReleaser, GitHub Actions release workflow, Homebrew tap. Plan in `docs/phase-7-distribution.md`.
