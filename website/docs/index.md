@@ -58,6 +58,10 @@ $ thakkali activity               # GitHub-style heatmap from log.jsonl
 
 ### Pomodoro mode
 
+The time renders in ANSI-Shadow block digits — the same font family
+as the logo — with the rolling tomato spinning, blinking, and hopping
+just below.
+
 ```text
 ████████╗██╗  ██╗ █████╗ ██╗  ██╗██╗  ██╗ █████╗ ██╗     ██╗
 ╚══██╔══╝██║  ██║██╔══██╗██║ ██╔╝██║ ██╔╝██╔══██╗██║     ██║
@@ -66,17 +70,19 @@ $ thakkali activity               # GitHub-style heatmap from log.jsonl
    ██║   ██║  ██║██║  ██║██║  ██╗██║  ██╗██║  ██║███████╗██║
    ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝
 
-              work (1/4) · task: TSK-3 Ship phase D
+                       ● running · work (1/4)
+                  task: THAK-3 Ship phase D #thakkali
 
-                       ╭─────────────────╮
-                       │                 │
-                       │      24:37      │
-                       │                 │
-                       ╰─────────────────╯
+         ██████╗  ██╗  ██╗      ██████╗  ███████╗
+         ╚════██╗ ██║  ██║ ██╗  ╚════██╗ ╚════██║
+          █████╔╝ ███████║ ╚═╝   █████╔╝     ██╔╝
+         ██╔═══╝  ╚════██║ ██╗   ╚═══██╗    ██╔╝
+         ███████╗      ██║ ╚═╝  ██████╔╝    ██║
+         ╚══════╝      ╚═╝       ╚═════╝    ╚═╝
 
-             (the tomato spins, blinks, and hops here)
+                   (rolling tomato spins here)
 
-          space pause · r reset · m minimal · q quit
+  space — pause/resume · r — reset · s — skip · m — minimal · +/− — adjust · q — quit
 ```
 
 ### Todo TUI
