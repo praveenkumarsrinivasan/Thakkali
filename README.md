@@ -15,6 +15,7 @@
 
 - **Simple timer by default** — pick a duration, hit go. No ceremony.
 - **Opt-in Pomodoro mode** (`-pomodoro` / `-p`) — work, short break, long break, configurable rounds
+- **Stopwatch / timer mode** (`-timer` / `-T`) — count up to track a task, optional soft target
 - **Animated tomato** — rolls continuously with a shimmering outer ring, blinking eyes, and a periodic 360° spin-and-jump trick (Ghostty-style layered ASCII)
 - **Big ANSI Shadow digits** for the timer, matching the logo font
 - **Cross-platform desktop notifications + beep** when a phase ends (macOS system sounds supported)
@@ -64,6 +65,8 @@ Every flag has a short form.
 |---------------|-------|---------|------------------------------------------------|
 | `-work`       | `-w`  | 25      | Timer length (minutes)                         |
 | `-pomodoro`   | `-p`  | false   | Enable full Pomodoro cycle (breaks + rounds)   |
+| `-timer`      | `-T`  | false   | Stopwatch mode — count up to track a task      |
+| `-target`     |       | —       | Soft goal for `-timer` (e.g. `45m`, `1h30m`)   |
 | `-short`      | `-s`  | 5       | Short break length (Pomodoro mode)             |
 | `-long`       | `-l`  | 15      | Long break length (Pomodoro mode)              |
 | `-rounds`     | `-r`  | 4       | Work rounds before a long break (Pomodoro)     |
@@ -88,6 +91,12 @@ thakkali -p -work 50 -short 10 -rounds 3
 
 # Quick smoke test — one full Pomodoro cycle in ~5 minutes
 thakkali -p -work 1 -short 1 -long 1 -rounds 2
+
+# Stopwatch — open-ended tracking for a task
+thakkali -T -t "code review"
+
+# Stopwatch with a 45-minute soft target (beeps and keeps running)
+thakkali -T -target 45m -t "debug prod issue"
 ```
 
 ## Keybindings
@@ -98,9 +107,13 @@ thakkali -p -work 1 -short 1 -long 1 -rounds 2
 | `r`       | Reset current phase timer             |
 | `s`       | Skip to next phase (Pomodoro mode)    |
 | `m`       | Toggle minimal mode (hide logo + tomato) |
-| `+` / `=` | Add 1 minute to current phase         |
-| `-` / `_` | Subtract 1 minute from current phase  |
-| `q`       | Quit                                  |
+| `h`       | Toggle footer help                       |
+| `+` / `=` | Add 1 minute (phase duration, or `-timer` target) |
+| `-` / `_` | Subtract 1 minute (phase duration, or `-timer` target) |
+| `1`       | Switch to countdown mode                       |
+| `2`       | Switch to Pomodoro mode                        |
+| `3`       | Switch to timer / stopwatch mode               |
+| `q`       | Quit (saves in-progress `-timer` session) |
 
 ## Config
 
@@ -147,11 +160,14 @@ This format is easy to grep, pipe to `jq`, or load into any tool for your own st
 ## Stats
 
 ```bash
-thakkali stats              # today + last 7 days
-thakkali stats -days 30     # custom window
+thakkali stats                         # both sections — Pomodoro then Timer
+thakkali stats -days 30                # custom window
+thakkali stats -mode pomodoro          # only Pomodoro / countdown sessions
+thakkali stats -mode timer             # only stopwatch sessions
+thakkali stats -m timer -days 14       # short form
 ```
 
-Prints today's total, a per-day ASCII bar chart, top tasks by time, and all-time work total — all read from `log.jsonl`.
+Each section prints today's total, a per-day ASCII bar chart (independently scaled), top tasks by time, and an all-time total — all read from `log.jsonl`.
 
 ## Roadmap
 

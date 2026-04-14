@@ -34,7 +34,10 @@ Supporting files:
 go build -o thakkali .    # always run after source changes
 ./thakkali                 # simple 25-min timer (default)
 ./thakkali -p              # full Pomodoro cycle (work + breaks + rounds)
-./thakkali stats           # today + 7-day stats from log.jsonl
+./thakkali -T              # stopwatch / count-up timer for task tracking
+./thakkali -T -target 45m  # stopwatch with a soft target
+./thakkali stats           # both sections — Pomodoro then Timer
+./thakkali stats -m timer  # only stopwatch chart
 ```
 
 There is no test suite yet. Verification is visual: build, run, observe the animation and timer behaviour.
@@ -57,7 +60,7 @@ Phases 1–6 shipped and on `main`:
 5. `stats` subcommand
 6. macOS system-sound support (`afplay`) with cross-platform beep fallback
 
-Post-phase polish also landed: ANSI Shadow digit font for the timer, solo/pomodoro flip (simple timer is default), minimal mode (hide logo + animation), duration hotkeys (`+` / `-`), short flag aliases.
+Post-phase polish also landed: ANSI Shadow digit font for the timer, solo/pomodoro flip (simple timer is default), minimal mode (hide logo + animation), duration hotkeys (`+` / `-`), short flag aliases, and a count-up stopwatch mode (`-timer` / `-T`) with optional soft target (`-target`) and a split `stats -mode` view (pomodoro | timer | all).
 
 Pending:
 

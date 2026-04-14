@@ -264,6 +264,7 @@ const (
 	phaseWork phase = iota
 	phaseShort
 	phaseLong
+	phaseTimer
 )
 
 func (p phase) String() string {
@@ -274,6 +275,8 @@ func (p phase) String() string {
 		return "short_break"
 	case phaseLong:
 		return "long_break"
+	case phaseTimer:
+		return "timer"
 	}
 	return "unknown"
 }
@@ -374,12 +377,18 @@ type model struct {
 	sound     string
 	pomodoro  bool // full cycle: work + short/long breaks across rounds
 	minimal   bool // hide logo + tomato animation
+	countUp   bool // stopwatch mode — count up from 0 rather than down
+	hideHelp  bool // hide footer hint lines
 
 	remaining time.Duration
 	running   bool
 	done      bool // only used in simple-timer (non-pomodoro) mode
 	phase     phase
 	round     int // current work round, 1..rounds
+
+	elapsed   time.Duration // count-up elapsed time (timer mode)
+	target    time.Duration // optional soft goal in timer mode; 0 = none
+	targetHit bool          // latched once elapsed crosses target
 
 	width   int
 	spriteX int
@@ -437,6 +446,43 @@ func (m *model) advance() {
 	go notifyTransition(from, m.phase, m.sound)
 }
 
+// logTimerSession writes a stopwatch session to log.jsonl. Called on quit and
+// on reset so in-progress tracking isn't silently discarded.
+func (m *model) logTimerSession() {
+	if !m.countUp || m.elapsed < time.Second {
+		return
+	}
+	appendLog(logEntry{
+		Timestamp:   time.Now().UTC().Format(time.RFC3339),
+		Phase:       phaseTimer.String(),
+		DurationSec: int(m.elapsed.Seconds()),
+		Task:        m.task,
+	})
+}
+
+// switchMode reconfigures the live model into countdown / pomodoro / timer without
+// quitting. If we're leaving an in-progress timer session, flush it to the log
+// first so tracked time isn't silently dropped.
+func (m *model) switchMode(pomodoro, countUp bool) {
+	if m.countUp {
+		m.logTimerSession()
+	}
+	m.pomodoro = pomodoro
+	m.countUp = countUp
+	m.elapsed = 0
+	m.targetHit = false
+	m.done = false
+	m.round = 1
+	if countUp {
+		m.phase = phaseTimer
+		m.remaining = 0
+	} else {
+		m.phase = phaseWork
+		m.remaining = m.durations[phaseWork]
+	}
+	m.running = true
+}
+
 func notifyTransition(from, to phase, sound string) {
 	var msg string
 	switch to {
@@ -482,35 +528,83 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "ctrl+c":
+			m.logTimerSession()
 			return m, tea.Quit
 		case " ":
 			m.running = !m.running
 		case "r":
-			m.remaining = m.durations[m.phase]
-			m.running = true
-			m.done = false
+			if m.countUp {
+				// Preserve the in-progress session so an accidental reset
+				// doesn't silently drop tracked time.
+				m.logTimerSession()
+				m.elapsed = 0
+				m.targetHit = false
+				m.running = true
+			} else {
+				m.remaining = m.durations[m.phase]
+				m.running = true
+				m.done = false
+			}
 		case "s":
 			if m.pomodoro {
 				m.advance()
 			}
 		case "m":
 			m.minimal = !m.minimal
+		case "h":
+			m.hideHelp = !m.hideHelp
+		case "1":
+			m.switchMode(false, false)
+		case "2":
+			m.switchMode(true, false)
+		case "3":
+			m.switchMode(false, true)
 		case "+", "=":
-			if m.durations[m.phase] < 120*time.Minute {
+			if m.countUp {
+				if m.target < 24*time.Hour {
+					if m.target == 0 {
+						m.target = time.Minute
+					} else {
+						m.target += time.Minute
+					}
+					if m.elapsed < m.target {
+						m.targetHit = false
+					}
+				}
+			} else if m.durations[m.phase] < 120*time.Minute {
 				m.durations[m.phase] += time.Minute
 				m.remaining = m.durations[m.phase]
 			}
 		case "-", "_":
-			if m.durations[m.phase] > time.Minute {
+			if m.countUp {
+				if m.target > time.Minute {
+					m.target -= time.Minute
+				} else {
+					m.target = 0
+					m.targetHit = false
+				}
+			} else if m.durations[m.phase] > time.Minute {
 				m.durations[m.phase] -= time.Minute
 				m.remaining = m.durations[m.phase]
 			}
 		}
 	case tickMsg:
-		if m.running && !m.done {
-			m.remaining -= time.Second
-			if m.remaining <= 0 {
-				m.advance()
+		if m.running {
+			if m.countUp {
+				m.elapsed += time.Second
+				if m.target > 0 && !m.targetHit && m.elapsed >= m.target {
+					m.targetHit = true
+					sound := m.sound
+					go func() {
+						_ = beeep.Notify("Thakkali", "Target reached — keep going or wrap up.", "")
+						playSound(sound)
+					}()
+				}
+			} else if !m.done {
+				m.remaining -= time.Second
+				if m.remaining <= 0 {
+					m.advance()
+				}
 			}
 		}
 		return m, tick()
@@ -553,6 +647,9 @@ func formatDuration(d time.Duration) string {
 		d = 0
 	}
 	total := int(d.Seconds())
+	if total >= 3600 {
+		return fmt.Sprintf("%d:%02d:%02d", total/3600, (total%3600)/60, total%60)
+	}
 	return fmt.Sprintf("%02d:%02d", total/60, total%60)
 }
 
@@ -815,15 +912,29 @@ func (m model) View() string {
 		status = statusStyle.Render("‖ paused")
 	}
 
-	timer := timeStyle.Render(renderBigTime(formatDuration(m.remaining)))
+	var display time.Duration
+	if m.countUp {
+		display = m.elapsed
+	} else {
+		display = m.remaining
+	}
+	timeRender := timeStyle
+	if m.countUp && m.targetHit {
+		timeRender = doneStyle
+	}
+	timer := timeRender.Render(renderBigTime(formatDuration(display)))
 
 	var helpText string
-	if !m.pomodoro {
-		helpText = "space — pause/resume · r — reset · m — minimal · +/− — adjust · q — quit"
-	} else {
-		helpText = "space — pause/resume · r — reset · s — skip · m — minimal · +/− — adjust · q — quit"
+	switch {
+	case m.countUp:
+		helpText = "space — pause/resume · r — reset · m — minimal · h — toggle help · +/− — target · q — save & quit"
+	case m.pomodoro:
+		helpText = "space — pause/resume · r — reset · s — skip · m — minimal · h — toggle help · +/− — adjust · q — quit"
+	default:
+		helpText = "space — pause/resume · r — reset · m — minimal · h — toggle help · +/− — adjust · q — quit"
 	}
-	help := helpStyle.Render(helpText)
+	modeHelp := "1 — countdown · 2 — pomodoro · 3 — timer"
+	help := helpStyle.Copy().Align(lipgloss.Center).Render(helpText + "\n" + modeHelp)
 
 	sections := []string{""}
 	if !m.minimal {
@@ -834,22 +945,44 @@ func (m model) View() string {
 			"",
 		)
 	}
-	if m.pomodoro {
+	switch {
+	case m.countUp:
+		label := "timer"
+		if m.target > 0 {
+			mark := "target"
+			if m.targetHit {
+				mark = "target ✔"
+			}
+			label = fmt.Sprintf("timer · %s %s", mark, formatDuration(m.target))
+		}
+		labelStyle := workLabelStyle
+		if m.targetHit {
+			labelStyle = breakLabelStyle
+		}
+		sections = append(sections, labelStyle.Render(label))
+		if m.task != "" {
+			sections = append(sections, statusStyle.Render("task: "+m.task))
+		}
+		sections = append(sections, "")
+	case m.pomodoro:
 		sections = append(sections, m.phaseStyle().Render(m.phaseLabel()))
 		if m.task != "" && m.phase == phaseWork {
 			sections = append(sections, statusStyle.Render("task: "+m.task))
 		}
 		sections = append(sections, "")
-	} else if m.task != "" {
-		sections = append(sections, statusStyle.Render("task: "+m.task), "")
+	default:
+		if m.task != "" {
+			sections = append(sections, statusStyle.Render("task: "+m.task), "")
+		}
 	}
 	sections = append(sections,
 		timer,
 		"",
 		status,
-		"",
-		help,
 	)
+	if !m.hideHelp {
+		sections = append(sections, "", help)
+	}
 
 	return lipgloss.JoinVertical(lipgloss.Center, sections...)
 }
@@ -899,10 +1032,93 @@ func bar(val, max, width int) string {
 	return strings.Repeat("█", filled) + strings.Repeat("░", width-filled)
 }
 
+// statsBanner returns a thick block-letter line spanning the logo width with
+// " STATS " centered inside, so the section header reads as part of the logo
+// rather than a tiny afterthought.
+func statsBanner() string {
+	return statsBannerWithLabel(" STATS ")
+}
+
+func printExamples() {
+	header := lipgloss.NewStyle().Foreground(colRed).Bold(true)
+	cmdStyle := lipgloss.NewStyle().Foreground(colBrightRed)
+	dim := lipgloss.NewStyle().Foreground(colDim)
+
+	section := func(title string, items [][2]string) {
+		fmt.Println()
+		fmt.Println(header.Render(title))
+		fmt.Println()
+		for _, it := range items {
+			fmt.Printf("  %s\n", cmdStyle.Render(it[0]))
+			fmt.Printf("    %s\n\n", dim.Render(it[1]))
+		}
+	}
+
+	fmt.Println()
+	fmt.Println(logoStyle.Render(logo))
+	fmt.Println(logoStyle.Render(statsBannerWithLabel(" EXAMPLES ")))
+
+	section("countdown mode (default)", [][2]string{
+		{"thakkali", "25-minute countdown — the default, no flags needed"},
+		{"thakkali -w 45", "45-minute countdown"},
+		{"thakkali -w 50 -t \"deep work\"", "tag the session so it shows up under top tasks in stats"},
+		{"thakkali -w 30 -m", "minimal mode — hide the logo and tomato animation"},
+		{"thakkali -w 25 -S Glass", "use macOS Glass sound when the timer ends"},
+	})
+
+	section("pomodoro mode", [][2]string{
+		{"thakkali -p", "classic Pomodoro — 25 / 5 / 15, four rounds"},
+		{"thakkali -p -t \"ship phase 7\"", "Pomodoro with a task tag (work phases only)"},
+		{"thakkali -p -w 50 -s 10 -l 20 -r 3", "longer work blocks, 10-min short break, 20-min long break, 3 rounds"},
+		{"thakkali -p -w 1 -s 1 -l 1 -r 2", "smoke test — full cycle in ~5 minutes"},
+		{"thakkali -p -m -S Hero", "minimal Pomodoro with Hero notification sound"},
+	})
+
+	section("timer / stopwatch mode", [][2]string{
+		{"thakkali -T", "open-ended stopwatch — counts up until you quit"},
+		{"thakkali -T -t \"code review\"", "stopwatch tagged with a task"},
+		{"thakkali -T -target 45m -t \"debug prod\"", "soft 45-minute goal — beeps on reach, keeps running"},
+		{"thakkali -T -target 1h30m -t \"design doc\"", "longer goals accept any time.ParseDuration string"},
+		{"thakkali -T -m -t \"meeting\"", "minimal stopwatch for a quiet corner of your terminal"},
+	})
+
+	section("stats", [][2]string{
+		{"thakkali stats", "today + last 7 days, both Pomodoro and Timer sections"},
+		{"thakkali stats -days 30", "wider window"},
+		{"thakkali stats -mode pomodoro", "only Pomodoro / countdown sessions"},
+		{"thakkali stats -m timer -days 14", "only stopwatch sessions, last 14 days (short flag)"},
+	})
+
+	fmt.Println(dim.Render("  in-app keys: space — pause/resume · r — reset · m — minimal · h — toggle help · +/− — adjust · 1/2/3 — mode · q — quit"))
+	fmt.Println()
+}
+
+// statsBannerWithLabel is the generalized form of statsBanner — used by
+// printExamples to produce a matching banner with a different label.
+func statsBannerWithLabel(label string) string {
+	width := lipgloss.Width(strings.Split(logo, "\n")[0])
+	pad := width - lipgloss.Width(label)
+	if pad < 2 {
+		return label
+	}
+	left := pad / 2
+	right := pad - left
+	return strings.Repeat("█", left) + label + strings.Repeat("█", right)
+}
+
 func runStats(args []string) {
 	fs := flag.NewFlagSet("stats", flag.ExitOnError)
 	days := fs.Int("days", 7, "number of past days to include in the chart")
+	mode := fs.String("mode", "all", "which sessions to show: all | pomodoro | timer")
+	fs.StringVar(mode, "m", "all", "shorthand for -mode")
 	_ = fs.Parse(args)
+
+	switch *mode {
+	case "all", "pomodoro", "timer":
+	default:
+		fmt.Fprintf(os.Stderr, "error: -mode must be all, pomodoro, or timer (got %q)\n", *mode)
+		os.Exit(2)
+	}
 
 	entries := readLog()
 	if len(entries) == 0 {
@@ -910,39 +1126,54 @@ func runStats(args []string) {
 		return
 	}
 
+	fmt.Println()
+	fmt.Println(logoStyle.Render(logo))
+	fmt.Println(logoStyle.Render(statsBanner()))
+
+	if *mode == "all" || *mode == "pomodoro" {
+		renderStatsSection(entries, *days, "pomodoro", "work", map[string]bool{"work": true})
+	}
+	if *mode == "all" || *mode == "timer" {
+		renderStatsSection(entries, *days, "timer", "timer", map[string]bool{"timer": true})
+	}
+}
+
+// renderStatsSection prints one stats block (today / last-N-days / bar chart /
+// top tasks / all-time) filtered to the given set of logEntry.Phase values.
+// `title` is the section heading; `noun` is the word used in summary lines
+// ("work" or "timer").
+func renderStatsSection(entries []logEntry, days int, title, noun string, phases map[string]bool) {
 	now := time.Now()
 	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	rangeStart := todayStart.AddDate(0, 0, -(*days - 1))
+	rangeStart := todayStart.AddDate(0, 0, -(days - 1))
 
 	var (
-		todayWork     int
+		todayTotal    int
 		todaySessions int
-		rangeWork     int
-		allTimeWork   int
+		rangeTotal    int
+		allTimeTotal  int
 	)
 	perDay := make(map[string]int)
 	tasks := make(map[string]int)
 
 	for _, e := range entries {
+		if !phases[e.Phase] {
+			continue
+		}
 		t, err := time.Parse(time.RFC3339, e.Timestamp)
 		if err != nil {
 			continue
 		}
 		tLocal := t.Local()
-		if e.Phase == "work" {
-			allTimeWork += e.DurationSec
-		}
+		allTimeTotal += e.DurationSec
 		if tLocal.Before(rangeStart) {
-			continue
-		}
-		if e.Phase != "work" {
 			continue
 		}
 		dateKey := tLocal.Format("2006-01-02")
 		perDay[dateKey] += e.DurationSec
-		rangeWork += e.DurationSec
+		rangeTotal += e.DurationSec
 		if !tLocal.Before(todayStart) {
-			todayWork += e.DurationSec
+			todayTotal += e.DurationSec
 			todaySessions++
 		}
 		if e.Task != "" {
@@ -951,24 +1182,30 @@ func runStats(args []string) {
 	}
 
 	header := lipgloss.NewStyle().Foreground(colRed).Bold(true)
+	subHeader := lipgloss.NewStyle().Foreground(colRed).Bold(true).Underline(true)
 	dim := lipgloss.NewStyle().Foreground(colDim)
 	accent := lipgloss.NewStyle().Foreground(colBrightRed)
 
 	fmt.Println()
-	fmt.Println(header.Render("THAKKALI — stats"))
-	fmt.Println()
+	fmt.Println(subHeader.Render(strings.ToUpper(title)))
 
+	if allTimeTotal == 0 {
+		fmt.Printf("  %s\n\n", dim.Render("no "+noun+" sessions logged yet."))
+		return
+	}
+
+	fmt.Println()
 	fmt.Println(header.Render("today"))
-	fmt.Printf("  work   %s  %s\n",
-		accent.Render(fmtDur(todayWork)),
+	fmt.Printf("  %-6s %s  %s\n",
+		noun,
+		accent.Render(fmtDur(todayTotal)),
 		dim.Render(fmt.Sprintf("(%d sessions)", todaySessions)))
 	fmt.Println()
 
-	fmt.Println(header.Render(fmt.Sprintf("last %d days", *days)))
-	fmt.Printf("  total  %s\n", accent.Render(fmtDur(rangeWork)))
+	fmt.Println(header.Render(fmt.Sprintf("last %d days", days)))
+	fmt.Printf("  total  %s\n", accent.Render(fmtDur(rangeTotal)))
 	fmt.Println()
 
-	// Bar chart: find max for scaling.
 	maxSec := 0
 	for _, v := range perDay {
 		if v > maxSec {
@@ -976,7 +1213,7 @@ func runStats(args []string) {
 		}
 	}
 	const barWidth = 24
-	for i := 0; i < *days; i++ {
+	for i := 0; i < days; i++ {
 		d := rangeStart.AddDate(0, 0, i)
 		key := d.Format("2006-01-02")
 		sec := perDay[key]
@@ -1014,7 +1251,9 @@ func runStats(args []string) {
 		fmt.Println()
 	}
 
-	fmt.Printf("%s %s\n\n", dim.Render("all-time work:"), accent.Render(fmtDur(allTimeWork)))
+	fmt.Printf("%s %s\n\n",
+		dim.Render("all-time "+noun+":"),
+		accent.Render(fmtDur(allTimeTotal)))
 }
 
 // Set at build time via -ldflags "-X main.version=... -X main.commit=... -X main.date=..."
@@ -1056,6 +1295,13 @@ func main() {
 	flag.BoolVar(pomodoro, "pomodoro", false, "full Pomodoro cycle — work + breaks + rounds")
 	flag.BoolVar(pomodoro, "p", false, "shorthand for -pomodoro")
 
+	timerMode := new(bool)
+	flag.BoolVar(timerMode, "timer", false, "stopwatch mode — count up from 0 to track a task")
+	flag.BoolVar(timerMode, "T", false, "shorthand for -timer")
+
+	target := new(string)
+	flag.StringVar(target, "target", "", "soft goal for -timer (e.g. 45m, 1h30m); notifies on reach, keeps running")
+
 	minimal := new(bool)
 	flag.BoolVar(minimal, "minimal", false, "hide logo and tomato animation")
 	flag.BoolVar(minimal, "m", false, "shorthand for -minimal")
@@ -1064,13 +1310,77 @@ func main() {
 	flag.StringVar(sound, "sound", cfg.Sound, `notification sound (macOS: "Glass", "Ping", "Hero", etc; "" or "default" for beep)`)
 	flag.StringVar(sound, "S", cfg.Sound, "shorthand for -sound")
 
-	showVersion := flag.Bool("version", false, "print version and exit")
+	showVersion := new(bool)
+	flag.BoolVar(showVersion, "version", false, "print version and exit")
+	flag.BoolVar(showVersion, "v", false, "shorthand for -version")
+
+	showExamples := new(bool)
+	flag.BoolVar(showExamples, "examples", false, "print usage examples for all modes and exit")
+	flag.BoolVar(showExamples, "e", false, "shorthand for -examples")
+
+	flag.Usage = func() {
+		w := flag.CommandLine.Output()
+		fmt.Fprintln(w, "Thakkali — terminal Pomodoro timer with a rolling-tomato animation.")
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "Usage:")
+		fmt.Fprintln(w, "  thakkali [flags]")
+		fmt.Fprintln(w, "  thakkali stats [-days N] [-mode all|pomodoro|timer]")
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "Flags:")
+		rows := [][2]string{
+			{"-work, -w <int>", fmt.Sprintf("timer length in minutes (default %d)", cfg.Work)},
+			{"-pomodoro, -p", "full Pomodoro cycle — work + breaks + rounds"},
+			{"-timer, -T", "stopwatch mode — count up to track a task"},
+			{"-target <dur>", "soft goal for -timer (e.g. 45m, 1h30m)"},
+			{"-short, -s <int>", fmt.Sprintf("short break length in minutes, Pomodoro (default %d)", cfg.Short)},
+			{"-long, -l <int>", fmt.Sprintf("long break length in minutes, Pomodoro (default %d)", cfg.Long)},
+			{"-rounds, -r <int>", fmt.Sprintf("work rounds before a long break, Pomodoro (default %d)", cfg.Rounds)},
+			{"-task, -t <string>", "task description to tag the session"},
+			{"-minimal, -m", "hide logo and tomato animation"},
+			{"-sound, -S <string>", `notification sound (macOS: "Glass", "Ping", "Hero", etc; "" for beep)`},
+			{"-examples, -e", "print usage examples for all modes"},
+			{"-version, -v", "print version and exit"},
+		}
+		maxW := 0
+		for _, r := range rows {
+			if len(r[0]) > maxW {
+				maxW = len(r[0])
+			}
+		}
+		for _, r := range rows {
+			fmt.Fprintf(w, "  %-*s  %s\n", maxW, r[0], r[1])
+		}
+	}
 
 	flag.Parse()
 
 	if *showVersion {
 		fmt.Printf("thakkali %s (%s) built %s\n", version, commit, date)
 		return
+	}
+
+	if *showExamples {
+		printExamples()
+		return
+	}
+
+	if *timerMode && *pomodoro {
+		fmt.Fprintln(os.Stderr, "error: -timer and -pomodoro are mutually exclusive")
+		os.Exit(2)
+	}
+
+	var targetDur time.Duration
+	if *target != "" {
+		if !*timerMode {
+			fmt.Fprintln(os.Stderr, "error: -target requires -timer")
+			os.Exit(2)
+		}
+		d, err := time.ParseDuration(*target)
+		if err != nil || d <= 0 {
+			fmt.Fprintf(os.Stderr, "error: invalid -target %q (try 45m, 1h30m)\n", *target)
+			os.Exit(2)
+		}
+		targetDur = d
 	}
 
 	buildFrames()
@@ -1087,10 +1397,16 @@ func main() {
 		sound:     *sound,
 		pomodoro:  *pomodoro,
 		minimal:   *minimal,
+		countUp:   *timerMode,
+		target:    targetDur,
 		remaining: work,
 		running:   true,
 		phase:     phaseWork,
 		round:     1,
+	}
+	if *timerMode {
+		m.phase = phaseTimer
+		m.remaining = 0
 	}
 
 	if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
