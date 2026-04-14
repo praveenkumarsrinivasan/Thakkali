@@ -1,4 +1,4 @@
-module github.com/praveensrinivasan/thakkali
+module github.com/praveenkumarsrinivasan/thakkali
 
 go 1.26.2
 

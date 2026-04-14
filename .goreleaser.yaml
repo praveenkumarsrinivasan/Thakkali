@@ -1,0 +1,69 @@
+version: 2
+
+project_name: thakkali
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: thakkali
+    main: .
+    binary: thakkali
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.ShortCommit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - id: thakkali
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^chore:"
+      - "^ci:"
+
+brews:
+  - name: thakkali
+    repository:
+      owner: praveenkumarsrinivasan
+      name: homebrew-thakkali
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    homepage: https://github.com/praveenkumarsrinivasan/Thakkali
+    description: "Terminal Pomodoro timer with a Ghostty-inspired rolling-tomato ASCII animation."
+    license: MIT
+    install: |
+      bin.install "thakkali"
+    test: |
+      assert_match "thakkali", shell_output("#{bin}/thakkali -version")

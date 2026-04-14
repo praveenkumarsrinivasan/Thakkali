@@ -1017,6 +1017,13 @@ func runStats(args []string) {
 	fmt.Printf("%s %s\n\n", dim.Render("all-time work:"), accent.Render(fmtDur(allTimeWork)))
 }
 
+// Set at build time via -ldflags "-X main.version=... -X main.commit=... -X main.date=..."
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "stats" {
 		runStats(os.Args[2:])
@@ -1057,7 +1064,14 @@ func main() {
 	flag.StringVar(sound, "sound", cfg.Sound, `notification sound (macOS: "Glass", "Ping", "Hero", etc; "" or "default" for beep)`)
 	flag.StringVar(sound, "S", cfg.Sound, "shorthand for -sound")
 
+	showVersion := flag.Bool("version", false, "print version and exit")
+
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Printf("thakkali %s (%s) built %s\n", version, commit, date)
+		return
+	}
 
 	buildFrames()
 

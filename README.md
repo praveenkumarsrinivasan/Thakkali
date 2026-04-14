@@ -25,22 +25,28 @@
 
 ## Install
 
+### Homebrew (macOS / Linux)
+
+```bash
+brew install praveenkumarsrinivasan/thakkali/thakkali
+```
+
+Upgrade later with `brew upgrade thakkali`.
+
+### Prebuilt binaries
+
+Grab the archive for your platform from the [Releases page](https://github.com/praveenkumarsrinivasan/Thakkali/releases), extract it, and put the `thakkali` binary somewhere on your `PATH`.
+
 ### From source
 
 Requires Go 1.21+.
 
 ```bash
-git clone <repo-url> thakkali
-cd thakkali
+git clone https://github.com/praveenkumarsrinivasan/Thakkali.git
+cd Thakkali
 go build -o thakkali .
 ./thakkali
 ```
-
-Move the binary anywhere on your `PATH` (e.g. `/usr/local/bin`) to run it as `thakkali` from any directory.
-
-### Homebrew
-
-Coming in a future release.
 
 ## Usage
 
